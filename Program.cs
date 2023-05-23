@@ -1,146 +1,132 @@
-﻿Duck mallard = new Mallard();
+﻿Beverage DarkRoast = new DarkRoast();
+DarkRoast.Cost();
 
-Duck rubberDuck = new RubberDuck();
+DarkRoast = new Mocha(DarkRoast);
+Console.WriteLine(DarkRoast.Cost().ToString());
+Console.WriteLine(DarkRoast.Description());
 
-mallard.PerformFlyBehaviour();
-mallard.PerformQuackBehaviour();
-// mallard duck gets tired
-mallard.FlyBehaviour = new FlyForTwoMinutes();
-mallard.PerformFlyBehaviour();
 
-rubberDuck.PerformFlyBehaviour();
-rubberDuck.PerformQuackBehaviour();
+DarkRoast = new EspressoShot(DarkRoast);
+Console.WriteLine(DarkRoast.Cost().ToString());
+Console.WriteLine(DarkRoast.Description());
 
-public abstract class Duck
+DarkRoast = new MembershipPerk(DarkRoast);
+Console.WriteLine(DarkRoast.Cost().ToString());
+Console.WriteLine(DarkRoast.Description());
+public abstract class Beverage
 {
-    protected QuackBehaviour QuackBehaviour { get; set; }
-    public FlyBehaviour FlyBehaviour { get; set; }
-
-    public void PerformFlyBehaviour()
+    protected string _description = "Unknown Beverage";
+    public virtual string Description()
     {
-        FlyBehaviour.Fly();
+        return _description;
     }
-    public void PerformQuackBehaviour()
-    {
-        QuackBehaviour.Quack();
-    }
-
-
-    public void Swim()
-    {
-        Console.WriteLine("The duck swims around.");
-    }
-
-    public abstract void Display();
+    public abstract decimal Cost();
 }
 
-public class Mallard : Duck { 
-    public override void Display()
-    {
-        Console.WriteLine("This duck looks like a mallard.");
-    }
-
-    public Mallard()
-    {
-        FlyBehaviour = new FlyWithWings();
-        QuackBehaviour = new QuackLikeADuck();
-    }
-}
-
-// Redheads can only fly for two minutes
-public class RedHead: Duck
+#region baseConcrete
+// Base Concrete Classes
+public class DarkRoast : Beverage
 {
-    public override void Display()
+    // no beverage property here because they cannot decorate other classes
+    public DarkRoast()
     {
-        Console.WriteLine("This duck looks like a redhead.");
+        _description = "Dark Roast Coffee";
     }
 
-    public RedHead()
+    // return their own values rather than delegating to the decorated object's method
+    public override decimal Cost()
     {
-        FlyBehaviour = new FlyForTwoMinutes();
-        QuackBehaviour = new QuackLikeADuck();
-    }
-
-}
-
-public class RubberDuck: Duck
-{
-    public override void Display()
-    {
-        Console.WriteLine("Looks like a rubber duck.");
-    }
-
-    public RubberDuck()
-    {
-        FlyBehaviour = new FlyFlightless();
-        QuackBehaviour = new QuackSqueak();
+        return 1.99M;
     }
 }
 
-public class WoodenDecoyDuck : Duck
+public class Espresso: Beverage
 {
-    public override void Display()
+
+    public Espresso()
     {
-        Console.WriteLine("Looks like a real duck but made of wood.");
+        _description = "Espresso Coffee";
     }
 
-    public WoodenDecoyDuck()
+    public override decimal Cost()
     {
-        FlyBehaviour = new FlyFlightless();
-        QuackBehaviour = new QuackMute();
+        return 2.79M;
+    }
+
+}
+#endregion
+
+#region Decorators
+// ABSTRACT DECORATOR
+public abstract class CondimentDecorator : Beverage
+{
+    // reference to the decorated object
+    protected Beverage _beverage;
+    public abstract override string Description();
+}
+
+// CONCRETE DECORATORS
+// Concrete decorator inherits from abstract decorator
+public class EspressoShot : CondimentDecorator
+{
+    public EspressoShot(Beverage decoratedBeverage)
+    {
+        _beverage = decoratedBeverage;
+    }
+
+    public override string Description()
+    {
+        return _beverage.Description() + ", Espresso Shot";
+    }
+
+    public override decimal Cost()
+    {
+        return 0.20M + _beverage.Cost();
     }
 }
 
-// FLY BEHAVIOUR
-public interface FlyBehaviour
+public class Mocha : CondimentDecorator
 {
-    public void Fly();
-}
-public class FlyWithWings: FlyBehaviour
-{
-    public void Fly()
+    public Mocha(Beverage decoratedBeverage)
     {
-        Console.WriteLine("The duck flaps its wings and flies around");
+        _beverage = decoratedBeverage;
     }
-}
-public class FlyFlightless: FlyBehaviour
-{
-    public void Fly()
+
+    public override string Description()
     {
-        Console.WriteLine("This duck cannot fly.");
+        return _beverage.Description() + ", Mocha flakes";
     }
-}
-public class FlyForTwoMinutes: FlyBehaviour
-{
-    public void Fly()
+
+    public override decimal Cost()
     {
-        Console.WriteLine("The duck flies for two minutes at most.");
+        return 0.50M + _beverage.Cost();
     }
 }
 
-// QUACK BEHAVIOUR
-public interface QuackBehaviour
-{
-    public void Quack();
-}
-public class QuackLikeADuck : QuackBehaviour
-{
-    public void Quack()
+// TODO: Add method of preventing membership being added to anything but the final decorator
+public class MembershipPerk : CondimentDecorator { 
+
+    public MembershipPerk(Beverage decoratedBeverage)
     {
-        Console.WriteLine("The duck makes the sound that most living ducks will make.");
+        _beverage = decoratedBeverage;
+    }
+
+    public override decimal Cost()
+    {
+        AddPointsToUser(_beverage.Cost());
+        return _beverage.Cost() / 2;
+    }
+
+    public override string Description()
+    {
+        return _beverage.Description() + ", half off!";
+    }
+
+    private void AddPointsToUser(decimal cost)
+    {
+        // make a call to user DB and increment points
+
+        Console.WriteLine($"You received {cost / 10} points for your account.");
     }
 }
-public class QuackSqueak: QuackBehaviour
-{
-    public void Quack()
-    {
-        Console.WriteLine("Squeak squeak!");
-    }
-}
-public class QuackMute: QuackBehaviour
-{
-    public void Quack()
-    {
-        Console.WriteLine(". . .");
-    }
-}
+#endregion
