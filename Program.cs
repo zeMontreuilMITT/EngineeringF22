@@ -1,132 +1,77 @@
-﻿Beverage DarkRoast = new DarkRoast();
-DarkRoast.Cost();
+﻿
+Car civic = new Vehicle(30000);
+civic = new HybridEngine(civic);
 
-DarkRoast = new Mocha(DarkRoast);
-Console.WriteLine(DarkRoast.Cost().ToString());
-Console.WriteLine(DarkRoast.Description());
+Console.WriteLine(civic.GetPrice());
 
-
-DarkRoast = new EspressoShot(DarkRoast);
-Console.WriteLine(DarkRoast.Cost().ToString());
-Console.WriteLine(DarkRoast.Description());
-
-DarkRoast = new MembershipPerk(DarkRoast);
-Console.WriteLine(DarkRoast.Cost().ToString());
-Console.WriteLine(DarkRoast.Description());
-public abstract class Beverage
+// base abstract class
+public abstract class Car
 {
-    protected string _description = "Unknown Beverage";
-    public virtual string Description()
-    {
-        return _description;
-    }
-    public abstract decimal Cost();
+    protected decimal _price;
+    public abstract decimal GetPrice();
 }
 
-#region baseConcrete
-// Base Concrete Classes
-public class DarkRoast : Beverage
+
+// base concrete classes
+class Vehicle: Car
 {
-    // no beverage property here because they cannot decorate other classes
-    public DarkRoast()
+    public Vehicle(decimal price)
     {
-        _description = "Dark Roast Coffee";
+        _price = price;
     }
 
-    // return their own values rather than delegating to the decorated object's method
-    public override decimal Cost()
+    public int Year { get; set; }
+    public string Model { get; set; }
+    public string Colour { get; set; }
+    public string BodyType { get; set; }
+    public override decimal GetPrice()
     {
-        return 1.99M;
+        return _price;
     }
 }
 
-public class Espresso: Beverage
+public abstract class CarUpgrade: Car
 {
+    protected Car _decoratedReference;
 
-    public Espresso()
+    public CarUpgrade(Car decoratedReference)
     {
-        _description = "Espresso Coffee";
+        _decoratedReference = decoratedReference;
     }
 
-    public override decimal Cost()
-    {
-        return 2.79M;
-    }
-
+    public abstract override decimal GetPrice();
 }
-#endregion
 
-#region Decorators
-// ABSTRACT DECORATOR
-public abstract class CondimentDecorator : Beverage
+public class LeatherSeats : CarUpgrade
 {
-    // reference to the decorated object
-    protected Beverage _beverage;
-    public abstract override string Description();
-}
+    public LeatherSeats(Car decoratedReference) : base(decoratedReference)
+    {
+    }
 
-// CONCRETE DECORATORS
-// Concrete decorator inherits from abstract decorator
-public class EspressoShot : CondimentDecorator
+    public override decimal GetPrice()
+    {
+        return _decoratedReference.GetPrice() + 500;
+    }
+}
+public class HybridEngine : CarUpgrade
 {
-    public EspressoShot(Beverage decoratedBeverage)
+    public HybridEngine(Car decoratedReference) : base(decoratedReference)
     {
-        _beverage = decoratedBeverage;
     }
 
-    public override string Description()
+    public override decimal GetPrice()
     {
-        return _beverage.Description() + ", Espresso Shot";
+        double discountPercent = _getEnviroDiscountPercent();
+
+        decimal basePrice = _decoratedReference.GetPrice();
+        decimal discount = (basePrice * (decimal)discountPercent);
+
+        return basePrice - discount + 2000;
     }
 
-    public override decimal Cost()
+    private double _getEnviroDiscountPercent()
     {
-        return 0.20M + _beverage.Cost();
-    }
-}
-
-public class Mocha : CondimentDecorator
-{
-    public Mocha(Beverage decoratedBeverage)
-    {
-        _beverage = decoratedBeverage;
-    }
-
-    public override string Description()
-    {
-        return _beverage.Description() + ", Mocha flakes";
-    }
-
-    public override decimal Cost()
-    {
-        return 0.50M + _beverage.Cost();
+        // fetches number from government API
+        return .20;
     }
 }
-
-// TODO: Add method of preventing membership being added to anything but the final decorator
-public class MembershipPerk : CondimentDecorator { 
-
-    public MembershipPerk(Beverage decoratedBeverage)
-    {
-        _beverage = decoratedBeverage;
-    }
-
-    public override decimal Cost()
-    {
-        AddPointsToUser(_beverage.Cost());
-        return _beverage.Cost() / 2;
-    }
-
-    public override string Description()
-    {
-        return _beverage.Description() + ", half off!";
-    }
-
-    private void AddPointsToUser(decimal cost)
-    {
-        // make a call to user DB and increment points
-
-        Console.WriteLine($"You received {cost / 10} points for your account.");
-    }
-}
-#endregion
