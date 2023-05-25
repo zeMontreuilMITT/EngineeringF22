@@ -1,0 +1,6 @@
+﻿Create a simple game where a ‘Player’ can use a ‘Weapon’ to kill an ‘Enemy.' If the ‘Enemy’ is a certain type, like a "boss" or "giant enemy," then the user needs to upgrade their weapon and decorate it with a special ability.
+
+Create multiple special abilities. Each one should only allow the player to "win" against one type of enemy.
+
+In the main function, try to create a simple simulation for facing a special enemy and asking the
+user to press a button to get an upgrade so they in order to win the fight.

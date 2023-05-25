@@ -1,77 +1,112 @@
-﻿
-Car civic = new Vehicle(30000);
-civic = new HybridEngine(civic);
+﻿// base abstract class that is inherited by the decorator and base concrete classes
 
-Console.WriteLine(civic.GetPrice());
+// Polymorphism: an instance of a class can be declared as a parent and then later instantiated as any instance of a child of that class at runtime
 
-// base abstract class
-public abstract class Car
+// "Family Tree" of equipmentEntity:
+// Can be instantiated as an EquipmentItem OR a child of EquipmentDecorator
+
+EquipmentEntity DecoratedBook;
+
+DecoratedBook = new EquipmentItem(); // valid because EquipmentItem is a child of EquipmentEntity
+
+PlayerCharacter player = new PlayerCharacter(DecoratedBook);
+player.DecorateEquipment(new DiplomacyDecorator());
+player.DecorateEquipment(new BlackmailDecorator());
+
+player.EquippedItem.GetEquipmentAttributes();
+
+
+#region base and concrete
+public abstract class EquipmentEntity
 {
-    protected decimal _price;
-    public abstract decimal GetPrice();
+    public abstract void GetEquipmentAttributes();
 }
 
-
-// base concrete classes
-class Vehicle: Car
+public class EquipmentItem : EquipmentEntity
 {
-    public Vehicle(decimal price)
+    public override void GetEquipmentAttributes()
     {
-        _price = price;
-    }
-
-    public int Year { get; set; }
-    public string Model { get; set; }
-    public string Colour { get; set; }
-    public string BodyType { get; set; }
-    public override decimal GetPrice()
-    {
-        return _price;
+        Console.WriteLine("Base item attributes");
     }
 }
 
-public abstract class CarUpgrade: Car
+public class PlayerCharacter
 {
-    protected Car _decoratedReference;
-
-    public CarUpgrade(Car decoratedReference)
+    private EquipmentEntity _equippedItem;
+    public EquipmentEntity EquippedItem
     {
-        _decoratedReference = decoratedReference;
+        get { return _equippedItem; }
+        set
+        {
+            if (value is EquipmentItem)
+            {
+                _equippedItem = value;
+            }
+        }
+    }
+    public PlayerCharacter(EquipmentEntity item)
+    {
+        EquippedItem = item;
     }
 
-    public abstract override decimal GetPrice();
-}
-
-public class LeatherSeats : CarUpgrade
-{
-    public LeatherSeats(Car decoratedReference) : base(decoratedReference)
+    public void DecorateEquipment(EquipmentDecorator decorator)
     {
-    }
-
-    public override decimal GetPrice()
-    {
-        return _decoratedReference.GetPrice() + 500;
-    }
-}
-public class HybridEngine : CarUpgrade
-{
-    public HybridEngine(Car decoratedReference) : base(decoratedReference)
-    {
-    }
-
-    public override decimal GetPrice()
-    {
-        double discountPercent = _getEnviroDiscountPercent();
-
-        decimal basePrice = _decoratedReference.GetPrice();
-        decimal discount = (basePrice * (decimal)discountPercent);
-
-        return basePrice - discount + 2000;
-    }
-
-    private double _getEnviroDiscountPercent()
-    {
-        // fetches number from government API
-        return .20;
+        // this method allows us to keep EquippedItem as a reference to the most recently instantiated Decorator object
+        decorator.DecoratedReference = EquippedItem;
+        EquippedItem = decorator;
     }
 }
+#endregion
+
+#region decorator classes
+public abstract class EquipmentDecorator : EquipmentEntity
+{
+    public EquipmentEntity DecoratedReference { get; set; }
+    public abstract override void GetEquipmentAttributes();
+
+    public EquipmentDecorator()
+    {
+
+    }
+    public EquipmentDecorator(EquipmentEntity decoratedReference)
+    {
+        DecoratedReference = decoratedReference;
+    }
+}
+public class DiplomacyDecorator : EquipmentDecorator
+{
+    public DiplomacyDecorator(EquipmentEntity decoratedReference) : base(decoratedReference)
+    {
+    }
+
+    public DiplomacyDecorator()
+    {
+
+    }
+
+    public override void GetEquipmentAttributes()
+    {
+        Console.WriteLine("Player wins against Diplomacy vulnerability");
+        DecoratedReference.GetEquipmentAttributes();
+    }
+
+}
+public class BlackmailDecorator : EquipmentDecorator
+{
+    public BlackmailDecorator(EquipmentEntity decoratedReference) : base(decoratedReference)
+    {
+    }
+
+    public BlackmailDecorator()
+    {
+
+    }
+
+    public override void GetEquipmentAttributes()
+    {
+        Console.WriteLine("Player wins against Blackmail vulnerability");
+        DecoratedReference.GetEquipmentAttributes();
+    }
+
+}
+#endregion
