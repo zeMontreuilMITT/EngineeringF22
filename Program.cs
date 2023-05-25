@@ -1,146 +1,192 @@
-﻿Duck mallard = new Mallard();
+﻿#region pizza interfaces and implementations
 
-Duck rubberDuck = new RubberDuck();
+PizzaStore american = new AmericanPizzaStore();
+string canadianType = "Canadian";
+string cheeseType = "Cheese";
+PizzaStore canadian = new CanadianPizzaStore();
 
-mallard.PerformFlyBehaviour();
-mallard.PerformQuackBehaviour();
-// mallard duck gets tired
-mallard.FlyBehaviour = new FlyForTwoMinutes();
-mallard.PerformFlyBehaviour();
 
-rubberDuck.PerformFlyBehaviour();
-rubberDuck.PerformQuackBehaviour();
 
-public abstract class Duck
+    american.OrderPizza(cheeseType);
+    canadian.OrderPizza(cheeseType);
+
+
+    american.OrderPizza(canadianType);
+    canadian.OrderPizza(canadianType);
+
+public interface Pizza
 {
-    protected QuackBehaviour QuackBehaviour { get; set; }
-    public FlyBehaviour FlyBehaviour { get; set; }
-
-    public void PerformFlyBehaviour()
-    {
-        FlyBehaviour.Fly();
-    }
-    public void PerformQuackBehaviour()
-    {
-        QuackBehaviour.Quack();
-    }
-
-
-    public void Swim()
-    {
-        Console.WriteLine("The duck swims around.");
-    }
-
-    public abstract void Display();
+    void Prepare();
+    void Bake();
+    void Cut();
+    void Box();
 }
-
-public class Mallard : Duck { 
-    public override void Display()
-    {
-        Console.WriteLine("This duck looks like a mallard.");
-    }
-
-    public Mallard()
-    {
-        FlyBehaviour = new FlyWithWings();
-        QuackBehaviour = new QuackLikeADuck();
-    }
-}
-
-// Redheads can only fly for two minutes
-public class RedHead: Duck
+public class CheesePizza : Pizza
 {
-    public override void Display()
+    public void Bake()
     {
-        Console.WriteLine("This duck looks like a redhead.");
+        Console.WriteLine("Bake at 400 degrees for 20 minutes");
     }
 
-    public RedHead()
+    public void Box()
     {
-        FlyBehaviour = new FlyForTwoMinutes();
-        QuackBehaviour = new QuackLikeADuck();
+        Console.WriteLine("Box with Cheese Pizza label");
     }
 
-}
-
-public class RubberDuck: Duck
-{
-    public override void Display()
+    public void Cut()
     {
-        Console.WriteLine("Looks like a rubber duck.");
+        Console.WriteLine("Cut into squares.");
     }
 
-    public RubberDuck()
+    public void Prepare()
     {
-        FlyBehaviour = new FlyFlightless();
-        QuackBehaviour = new QuackSqueak();
+        Console.WriteLine("Add Cheese and pizza sauce.");
     }
 }
-
-public class WoodenDecoyDuck : Duck
+public class DoubleCheesePizza: Pizza
 {
-    public override void Display()
+    public void Bake()
     {
-        Console.WriteLine("Looks like a real duck but made of wood.");
+        Console.WriteLine("Bake at 425 degrees for 20 minutes");
     }
 
-    public WoodenDecoyDuck()
+    public void Box()
     {
-        FlyBehaviour = new FlyFlightless();
-        QuackBehaviour = new QuackMute();
+        Console.WriteLine("Box with Double Cheese Pizza label");
     }
+
+    public void Cut()
+    {
+        Console.WriteLine("Cut into squares.");
+    }
+
+    public void Prepare()
+    {
+        Console.WriteLine("Add double cheese and pizza sauce.");
+    }
+}
+public class PepperoniPizza : Pizza
+{
+    public void Bake()
+    {
+        Console.WriteLine("Bake at 425 degrees for 22 minutes");
+    }
+
+    public void Box()
+    {
+        Console.WriteLine("Box with Pepperoni Pizza label");
+    }
+
+    public void Cut()
+    {
+        Console.WriteLine("Cut into wedges.");
+    }
+
+    public void Prepare()
+    {
+        Console.WriteLine("Add cheese, pepperoni, and pizza sauce.");
+    }
+}
+public class CanadianPizza : Pizza
+{
+    public void Bake()
+    {
+        Console.WriteLine("Bake at 425 degrees for 23 minutes");
+    }
+
+    public void Box()
+    {
+        Console.WriteLine("Box with Canadian Pizza label");
+    }
+
+    public void Cut()
+    {
+        Console.WriteLine("Cut into wedges.");
+    }
+
+    public void Prepare()
+    {
+        Console.WriteLine("Add cheese, pepperoni, bacon, mushrooms, and pizza sauce.");
+    }
+}
+#endregion
+
+#region store classes
+public abstract class PizzaStore
+{
+    public void SealPizzaBox()
+    {
+        Console.WriteLine("Sealing the pizza box.");
+    }
+    public Pizza OrderPizza(string type)
+    {
+        Pizza pizza;
+        try {
+
+            // decide what type of pizza it is
+
+            pizza = ChoosePizza(type);
+            // we expect that this code is going to change regularly
+
+            // no matter what subclass of Pizza is chosen, this code will never change
+            pizza.Prepare();
+            pizza.Bake();
+            pizza.Cut();
+            pizza.Box();
+            SealPizzaBox();
+
+        } catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return null;
+        }
+        return pizza;
+    }
+
+    public abstract Pizza ChoosePizza(string type);
 }
 
-// FLY BEHAVIOUR
-public interface FlyBehaviour
+public class CanadianPizzaStore : PizzaStore
 {
-    public void Fly();
-}
-public class FlyWithWings: FlyBehaviour
-{
-    public void Fly()
+    public override Pizza ChoosePizza(string type)
     {
-        Console.WriteLine("The duck flaps its wings and flies around");
-    }
-}
-public class FlyFlightless: FlyBehaviour
-{
-    public void Fly()
-    {
-        Console.WriteLine("This duck cannot fly.");
-    }
-}
-public class FlyForTwoMinutes: FlyBehaviour
-{
-    public void Fly()
-    {
-        Console.WriteLine("The duck flies for two minutes at most.");
-    }
-}
+        Pizza newPizza;
+        if(type == "Pepperoni")
+        {
+            newPizza = new PepperoniPizza();
+        } else if (type =="Cheese")
+        {
+            newPizza = new CheesePizza();
+        } else if (type == "Canadian")
+        {
+            newPizza = new CanadianPizza();
+        } else
+        {
+            throw new ArgumentException($"Invalid selection type of '{type}'");
+        }
 
-// QUACK BEHAVIOUR
-public interface QuackBehaviour
-{
-    public void Quack();
-}
-public class QuackLikeADuck : QuackBehaviour
-{
-    public void Quack()
-    {
-        Console.WriteLine("The duck makes the sound that most living ducks will make.");
+        return newPizza;
     }
 }
-public class QuackSqueak: QuackBehaviour
+public class AmericanPizzaStore : PizzaStore
 {
-    public void Quack()
+    public override Pizza ChoosePizza(string type)
     {
-        Console.WriteLine("Squeak squeak!");
+        Pizza newPizza;
+        if (type == "Pepperoni")
+        {
+            newPizza = new PepperoniPizza();
+        }
+        else if (type == "Cheese")
+        {
+            newPizza = new DoubleCheesePizza();
+        }
+        else
+        {
+            throw new ArgumentException($"Invalid selection type of '{type}'");
+        }
+
+        return newPizza;
     }
 }
-public class QuackMute: QuackBehaviour
-{
-    public void Quack()
-    {
-        Console.WriteLine(". . .");
-    }
-}
+#endregion
