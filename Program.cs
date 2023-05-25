@@ -1,20 +1,66 @@
-﻿// base abstract class that is inherited by the decorator and base concrete classes
+﻿Game.Confrontation();
+public static class Game
+{
+    private static PlayerCharacter _character;
+    public static Opponent Opponent;
 
-// Polymorphism: an instance of a class can be declared as a parent and then later instantiated as any instance of a child of that class at runtime
+    static Game()
+    {
+        _character = new PlayerCharacter();
+        Opponent = new Jerk();
 
-// "Family Tree" of equipmentEntity:
-// Can be instantiated as an EquipmentItem OR a child of EquipmentDecorator
+        _character.SetEquipment(new EquipmentItem());
+        _character.DecorateEquipment(new DiplomacyDecorator());
+        _character.DecorateEquipment(new BlackmailDecorator());
 
-EquipmentEntity DecoratedBook;
 
-DecoratedBook = new EquipmentItem(); // valid because EquipmentItem is a child of EquipmentEntity
+    }
 
-PlayerCharacter player = new PlayerCharacter(DecoratedBook);
-player.DecorateEquipment(new DiplomacyDecorator());
-player.DecorateEquipment(new BlackmailDecorator());
+    public static void Confrontation()
+    {
+        _character.GetEquipmentAttributes();
 
-player.EquippedItem.GetEquipmentAttributes();
+        if (Opponent.Defeated)
+        {
+            Console.WriteLine("Player wins");
+        } else
+        {
+            Console.WriteLine("Opponent wins");
+        }
+    }
+}
 
+#region opponents
+public abstract class Opponent
+{
+    public bool Defeated { get; set; }
+}
+
+public class Jerk: Opponent, IDiplomacyVulnerable
+{
+
+}
+
+public class Misfortunate: Opponent, IBlackmailVulnerable
+{
+
+}
+
+public class Goblin: Opponent, IBlackmailVulnerable, IDiplomacyVulnerable
+{
+
+}
+
+public interface IDiplomacyVulnerable
+{
+
+}
+
+public interface IBlackmailVulnerable
+{
+
+}
+#endregion
 
 #region base and concrete
 public abstract class EquipmentEntity
@@ -26,34 +72,40 @@ public class EquipmentItem : EquipmentEntity
 {
     public override void GetEquipmentAttributes()
     {
-        Console.WriteLine("Base item attributes");
+        Console.WriteLine("This is a piece of equipment.");
     }
 }
 
 public class PlayerCharacter
 {
     private EquipmentEntity _equippedItem;
-    public EquipmentEntity EquippedItem
+    public void SetEquipment(EquipmentEntity item)
     {
-        get { return _equippedItem; }
-        set
+        if(item is EquipmentItem)
         {
-            if (value is EquipmentItem)
-            {
-                _equippedItem = value;
-            }
+            _equippedItem = item;
         }
     }
+
+    public void GetEquipmentAttributes()
+    {
+        _equippedItem.GetEquipmentAttributes();
+    }
+
     public PlayerCharacter(EquipmentEntity item)
     {
-        EquippedItem = item;
+        _equippedItem = item;
+    }
+
+    public PlayerCharacter()
+    {
     }
 
     public void DecorateEquipment(EquipmentDecorator decorator)
     {
         // this method allows us to keep EquippedItem as a reference to the most recently instantiated Decorator object
-        decorator.DecoratedReference = EquippedItem;
-        EquippedItem = decorator;
+        decorator.DecoratedReference = _equippedItem;
+        _equippedItem = decorator;
     }
 }
 #endregion
@@ -86,8 +138,17 @@ public class DiplomacyDecorator : EquipmentDecorator
 
     public override void GetEquipmentAttributes()
     {
-        Console.WriteLine("Player wins against Diplomacy vulnerability");
         DecoratedReference.GetEquipmentAttributes();
+        Console.WriteLine("The equipment is imbued with the power of diplomacy.");
+
+        if(Game.Opponent is IDiplomacyVulnerable)
+        {
+            Console.WriteLine("The enemy is vulnerable to diplomacy!");
+            Game.Opponent.Defeated = true;
+        } else
+        {
+            Console.WriteLine("The opponent shuns all attempt at diplomacy.");
+        }
     }
 
 }
@@ -99,13 +160,23 @@ public class BlackmailDecorator : EquipmentDecorator
 
     public BlackmailDecorator()
     {
-
+       
     }
 
     public override void GetEquipmentAttributes()
     {
-        Console.WriteLine("Player wins against Blackmail vulnerability");
         DecoratedReference.GetEquipmentAttributes();
+        Console.WriteLine("The equipment is imbued with the power of Blackmail.");
+
+        if (Game.Opponent is IBlackmailVulnerable)
+        {
+            Console.WriteLine("The opponent is vulnerable to blackmail!");
+            Game.Opponent.Defeated = true;
+        }
+        else
+        {
+            Console.WriteLine("The opponent is indifferent to blackmail.");
+        }
     }
 
 }
