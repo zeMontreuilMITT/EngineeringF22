@@ -1,192 +1,162 @@
-﻿#region pizza interfaces and implementations
-
-PizzaStore american = new AmericanPizzaStore();
-string canadianType = "Canadian";
-string cheeseType = "Cheese";
-PizzaStore canadian = new CanadianPizzaStore();
-
-
-
-    american.OrderPizza(cheeseType);
-    canadian.OrderPizza(cheeseType);
-
-
-    american.OrderPizza(canadianType);
-    canadian.OrderPizza(canadianType);
-
-public interface Pizza
+﻿#region userClasses
+public abstract class Client
 {
-    void Prepare();
-    void Bake();
-    void Cut();
-    void Box();
-}
-public class CheesePizza : Pizza
-{
-    public void Bake()
-    {
-        Console.WriteLine("Bake at 400 degrees for 20 minutes");
-    }
+    protected string UserName { get; set; }
+    public string UserAuthString { get; set; }
+    public bool HasAccess { get; set; }
 
-    public void Box()
-    {
-        Console.WriteLine("Box with Cheese Pizza label");
-    }
+    public AccessBehaviour AccessBehaviour { get; set; }
 
-    public void Cut()
+    public void UseAccessBehaviour()
     {
-        Console.WriteLine("Cut into squares.");
+        AccessBehaviour.HandleAccess(this);
     }
+    public abstract string BuildAuthString();
 
-    public void Prepare()
+    public Client(string userName)
     {
-        Console.WriteLine("Add Cheese and pizza sauce.");
+        UserName = userName;
+        BuildAuthString();
     }
 }
-public class DoubleCheesePizza: Pizza
+
+public class User : Client
 {
-    public void Bake()
+    public User(string userName) : base(userName)
     {
-        Console.WriteLine("Bake at 425 degrees for 20 minutes");
+        HasAccess = false;
     }
 
-    public void Box()
+    public override string BuildAuthString()
     {
-        Console.WriteLine("Box with Double Cheese Pizza label");
+        UserAuthString = UserName;
+        return UserAuthString;
     }
 
-    public void Cut()
-    {
-        Console.WriteLine("Cut into squares.");
-    }
+}
 
-    public void Prepare()
+public class Manager: Client
+{
+    public override string BuildAuthString()
     {
-        Console.WriteLine("Add double cheese and pizza sauce.");
+        UserAuthString = $"{UserName}MAN";
+        return UserAuthString;
+    }
+    public Manager(string userName) : base(userName)
+    {
+        HasAccess = true;
     }
 }
-public class PepperoniPizza : Pizza
+
+public class Admin: Client
 {
-    public void Bake()
+    public override string BuildAuthString()
     {
-        Console.WriteLine("Bake at 425 degrees for 22 minutes");
+        UserAuthString = $"{UserName}ADMIN";
+        return UserAuthString;
     }
-
-    public void Box()
+    public Admin(string userName) : base(userName)
     {
-        Console.WriteLine("Box with Pepperoni Pizza label");
-    }
-
-    public void Cut()
-    {
-        Console.WriteLine("Cut into wedges.");
-    }
-
-    public void Prepare()
-    {
-        Console.WriteLine("Add cheese, pepperoni, and pizza sauce.");
-    }
-}
-public class CanadianPizza : Pizza
-{
-    public void Bake()
-    {
-        Console.WriteLine("Bake at 425 degrees for 23 minutes");
-    }
-
-    public void Box()
-    {
-        Console.WriteLine("Box with Canadian Pizza label");
-    }
-
-    public void Cut()
-    {
-        Console.WriteLine("Cut into wedges.");
-    }
-
-    public void Prepare()
-    {
-        Console.WriteLine("Add cheese, pepperoni, bacon, mushrooms, and pizza sauce.");
+        HasAccess = true;
     }
 }
 #endregion
 
-#region store classes
-public abstract class PizzaStore
+#region accessStrategy
+public interface AccessBehaviour
 {
-    public void SealPizzaBox()
-    {
-        Console.WriteLine("Sealing the pizza box.");
-    }
-    public Pizza OrderPizza(string type)
-    {
-        Pizza pizza;
-        try {
-
-            // decide what type of pizza it is
-
-            pizza = ChoosePizza(type);
-            // we expect that this code is going to change regularly
-
-            // no matter what subclass of Pizza is chosen, this code will never change
-            pizza.Prepare();
-            pizza.Bake();
-            pizza.Cut();
-            pizza.Box();
-            SealPizzaBox();
-
-        } catch(Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            return null;
-        }
-        return pizza;
-    }
-
-    public abstract Pizza ChoosePizza(string type);
+    public bool HandleAccess(Client client);
 }
-
-public class CanadianPizzaStore : PizzaStore
+public class CheckStringAccessBehaviour: AccessBehaviour
 {
-    public override Pizza ChoosePizza(string type)
+    public bool HandleAccess(Client client)
     {
-        Pizza newPizza;
-        if(type == "Pepperoni")
+        if (client.UserAuthString.EndsWith("ADMIN"))
         {
-            newPizza = new PepperoniPizza();
-        } else if (type =="Cheese")
+            client.HasAccess = true;
+        }
+
+        return true;
+    }
+}
+public class SwitchAuthAccessBehaviour: AccessBehaviour
+{
+    public bool HandleAccess(Client client)
+    {
+        client.HasAccess = !client.HasAccess;
+        return client.HasAccess;
+    }
+}
+#endregion
+
+#region factory
+public class ClientFactory
+{
+    public virtual Client CreateClient(string clientType, string clientName)
+    {
+        Client client;
+
+        if(clientType == "user")
         {
-            newPizza = new CheesePizza();
-        } else if (type == "Canadian")
+            client = new User(clientName);
+        } else if (clientType == "manager") {
+            client = new Manager(clientName);
+        } else if (clientType == "administrator")
         {
-            newPizza = new CanadianPizza();
+            client = new Admin(clientName);
         } else
         {
-            throw new ArgumentException($"Invalid selection type of '{type}'");
+            throw new Exception("Invalid client type.");
         }
 
-        return newPizza;
+        return client;
     }
 }
-public class AmericanPizzaStore : PizzaStore
+#endregion
+
+#region handler
+public abstract class ClientHandler
 {
-    public override Pizza ChoosePizza(string type)
+    public ClientFactory Factory { get; set; }
+
+    public abstract Client CreateClient(string type, string name);
+}
+
+public class RetailClientHandler: ClientHandler
+{
+    public override Client CreateClient(string type, string name)
     {
-        Pizza newPizza;
-        if (type == "Pepperoni")
+        Client newClient = Factory.CreateClient(type, name);
+
+        if(newClient is User || newClient is Manager)
         {
-            newPizza = new PepperoniPizza();
-        }
-        else if (type == "Cheese")
+            newClient.AccessBehaviour = new SwitchAuthAccessBehaviour();
+        } else if (newClient is Admin)
         {
-            newPizza = new DoubleCheesePizza();
-        }
-        else
-        {
-            throw new ArgumentException($"Invalid selection type of '{type}'");
+            newClient.AccessBehaviour = new CheckStringAccessBehaviour();
         }
 
-        return newPizza;
+        return newClient;
     }
 }
+
+public class EnterpriseClientHandler : ClientHandler
+{
+    public override Client CreateClient(string type, string name)
+    {
+        Client newClient = Factory.CreateClient(type, name);
+
+        if (newClient is User)
+        {
+            newClient.AccessBehaviour = new SwitchAuthAccessBehaviour();
+        }
+        else if (newClient is Admin || newClient is Manager)
+        {
+            newClient.AccessBehaviour = new CheckStringAccessBehaviour();
+        }
+
+        return newClient;
+    }
+}
+
 #endregion
